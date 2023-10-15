@@ -1,0 +1,38 @@
+name: Scheduler
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+    branches: [main]
+
+jobs:
+  update-sponsors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm i --frozen-lockfile
+
+      - name: Update sponsors
+        run: pnpm exec sponsorkit -w 800 --dir . && pnpm exec sponsorkit -w 1000 --name sponsors.wide --dir .
+        env:
+          SPONSORKIT_GITHUB_LOGIN: hunghg255
+          SPONSORKIT_GITHUB_TOKEN: ${{ secrets.SPONSORKIT_GITHUB_TOKEN }}
+
+      - name: Commit
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: 'chore: update sponsors.svg'
+          add: 'sponsors.*'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
